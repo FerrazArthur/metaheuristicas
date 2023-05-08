@@ -29,11 +29,11 @@ function tspplot(tsp, sol, title = "")
     end
 
     # plota solução
-    for i = 1:(n-1)
+    for i = 1:(length(sol)-1)
         fig = plot!( [tsp.nodes[sol[i],1], tsp.nodes[sol[i+1],1]], [tsp.nodes[sol[i],2], tsp.nodes[sol[i+1],2]], color="black", lw=0.5)
     end
     # plot o segmento entre a última cidade e a primeira
-    fig = plot!( [tsp.nodes[sol[n],1], tsp.nodes[sol[1],1]], [tsp.nodes[sol[n],2], tsp.nodes[sol[1],2]], color="black", lw=0.5)
+    fig = plot!( [tsp.nodes[sol[end],1], tsp.nodes[sol[1],1]], [tsp.nodes[sol[end],2], tsp.nodes[sol[1],2]], color="black", lw=0.5)
 
     display(fig)
 end
