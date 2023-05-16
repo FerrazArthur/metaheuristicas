@@ -13,7 +13,7 @@ Repositório com metaheuristicas escritas em Julia para disciplina optativa
 
 > tsp = readTSPLIB([nome do modelo tsp])#exemplo-> :berlin52
 
-- se preciso, use uma solução randomica com:
+- Se preciso, use uma solução randomica com:
 
 > sol = randperm(tsp.dimension)
 
