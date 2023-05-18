@@ -1,23 +1,17 @@
 include("tsp.jl")
 include("funcoes-teste.jl")
 
-function diffEvo(f, l, u; dimension=100, nPopulation=1000, kIter=20000, Fmin=0.2, Fmax=0.6, CR=0.1, Kmax=1000)
+function partSwarm(f, l, u; dimension=100, nPopulation=50, kIter=20000, Cp=0.2, Cg=0.6, W=0.1)
     #verificando requisitos
     Kmax = floor(0.1*kIter)
-    if nPopulation <= 4
-        println("População muito pequena. Utilizaremos 5.")
-        nPopulation = 5
-    end
-    if Fmin > Fmax
-        println("Fmin nao pode ser maior que Fmax. Utilizaremos valores padrão(0.2 e 0.6).")
-        Fmin = 0.2
-        Fmax = 0.6
-    end
-    
     #gerando população aleatoriamente
-    currentpop = []
-    for i = 1:npopulation
-        append!(currentpop, [rand(l:0.001:u, dimension)])
+    currentPop = []
+    pos = zeros(Float64, nPopulation, dimension)
+    vel = zeros(Float64, nPopulation, dimension)
+    best = zeros(Float64, nPopulation, dimension)
+    bestG = 0
+    for i = 1:nPopulation
+        pos[i] .= [rand(l:0.001:u, dimension)]
     end
     #criando vetor utilizado para armazenar crossovers
     crossOver = zeros(Float64,dimension)
