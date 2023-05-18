@@ -1,9 +1,9 @@
 include("tsp.jl")
 include("funcoes-teste.jl")
 
-function diffEvo(f, l, u; dimension=100, nPopulation=1000, kIter=20000, Fmin=0.2, Fmax=0.8, CR=0.1)
-    Kmax = minimum([floor(0.1*dimension*nPopulation), floor(0.15*kIter)])
+function diffEvo(f, l, u; dimension=10, nPopulation=100, kIter=20000, Fmin=0.2, Fmax=0.6, CR=0.1, Kmax=1000)
     #verificando requisitos
+    Kmax = floor(0.1*kIter)
     if nPopulation <= 4
         println("População muito pequena. Utilizaremos 5.")
         nPopulation = 5
@@ -35,7 +35,7 @@ function diffEvo(f, l, u; dimension=100, nPopulation=1000, kIter=20000, Fmin=0.2
             end
             #garantindo que a mutação não saia do domínio do problema
             for j = 1:dimension
-                mutacao[j] = max(l, min(u, currentPop[escolhas[2]][j] + ((Fmax-Fmin)*rand() + Fmin)*currentPop[escolhas[3]][j]-currentPop[escolhas[3]][j]))
+                mutacao[j] = max(l, min(u, currentPop[escolhas[2]][j] + ((Fmax-Fmin)*rand() + Fmin)*currentPop[escolhas[3]][j]-currentPop[escolhas[4]][j]))
             end
 
             #realizando cross-over entre i e o mutado
@@ -50,14 +50,13 @@ function diffEvo(f, l, u; dimension=100, nPopulation=1000, kIter=20000, Fmin=0.2
             #se o crossOver tiver melhor performance, substituirá o individuo atual.
             if f(crossOver[:]) <= f(currentPop[i][:])
                 currentPop[i][:] .= crossOver[:]
-                kParada = Kmax
+                Kparada = Kmax
             end
         end
-        for i = 1:dimension
+        for i = 1:nPopulation
             loc = f(currentPop[i][:])
             minimo = loc <= minimo ? loc : minimo
         end
-        Base.run(`clear`)
         println("Iteração: ", k, " Mínimo: ", minimo)
         Kparada -= 1
         if Kparada == 0
