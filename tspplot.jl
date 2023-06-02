@@ -7,6 +7,7 @@
 ###################################################
 
 using Plots
+using Random
 
 function tspplot(tsp, sol, title = "")
     # número de cidades
