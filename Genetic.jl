@@ -1,11 +1,30 @@
 include("tsp.jl")
 """
-    Input:
+    Input: genitores 1 e 2
+    Realiza uma mistura entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
 """
 function crossover!(g1, g2)
 end
+"""
+    Input: genitores 1 e 2, conjunto da população e lista com valores de aptidão de cada individuo
+    Seleciona por roleta dois indivíduos distintos entre a população para serem g1 e g2
+"""
 function selecao!(g1, g2, populacao, aptidao)
+    roleta = aptidao/sum(aptidao)
+    roleta = cumsum(roleta)
+    #seleciona g1
+    randnum = rand()
+    g1 .= populacao[findfirst(randnum .<= aptidao), :]
+    #seleciona g2, garantindo que seja diferente de g1
+    while true
+        randnum = rand()
+        g2 .= populacao[findfirst(randnum .<= aptidao), :]
+        if g2 != g1
+            break
+        end
+    end
 end
+
 function mutacao!(individuo)
 end
 
