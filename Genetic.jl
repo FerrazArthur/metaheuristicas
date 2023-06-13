@@ -1,4 +1,13 @@
 include("tsp.jl")
+"""
+    Input:
+"""
+function crossover!(g1, g2)
+end
+function selecao!(g1, g2, populacao, aptidao)
+end
+function mutacao!(individuo)
+end
 
 """
     Input:
