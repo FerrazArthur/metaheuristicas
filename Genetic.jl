@@ -78,13 +78,14 @@ function genetic(tsp, N=500, K=100, limite=10, CR=0.5, CM=0.5)
         #para cada indivíduo
         for n = 1:N
             custoLocal = tspdist(tsp, populacao[n, :])
-            if n % 5 == 0
+            if n % 5 == 0 #imprime apenas alguns indivíduos
                 println("custoLocal=", custoLocal, " metros")
             end
             melhorLocal = (custoLocal < tspdist(tsp, populacao[melhorLocal, :])) ? n : melhorLocal
         end
-        #reforçando melhorLocal formiga
-        custoLocal = tspdist(tsp, populacao[melhorLocal, :])#custo da melhor formiga
+        
+        #atualiza melhor indivíduo
+        custoLocal = tspdist(tsp, populacao[melhorLocal, :])#custo da melhor solução
 
         if isempty(melhor)
             melhor = copy(populacao[melhorLocal, :])
@@ -92,8 +93,9 @@ function genetic(tsp, N=500, K=100, limite=10, CR=0.5, CM=0.5)
             melhor .= populacao[melhorLocal, :]
             contad = limite
         end
+
         #tspplot(tsp, populacao[melhorLocal, :])
-        tspplot(tsp, melhor, "Formiga com menor trajetoria:")
+        tspplot(tsp, melhor, "Indivíduo com menor trajetoria:")
         #sleep(0.08)
         println("Menor trajeto até então: ", tspdist(tsp, melhor), " metros")
         if contad == 0
