@@ -1,9 +1,133 @@
 include("tsp.jl")
+
+"""
+    Input: genitores 1 e 2
+    Realiza uma mistura Partially mapped entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
+"""
+function PMX(g1, g2)
+    n = length(g1)
+    f1 = zeros(n)
+    f2 = zeros(n)
+
+    i = rand(1:n-1)
+    j = rand(i+1:n)
+    
+    f2[i:j] .= g1[i:j]
+    f1[i:j] .= g2[i:j]
+    #cria uma lista de indices que faltam preencher
+    list = []
+    if i > 1
+        list = collect(1:i-1)
+    end
+    if j < n
+        list = vcat(list, collect(j+1:n))
+    end
+    #preencheremos os restantes com oque sobrou, garantindo não repetição
+    for pos in list
+        #preenche f1
+        valor = g1[pos]
+        while valor ∈ f1
+            valor = g2[findfirst(valor .== f1)]
+        end
+        f1[pos] = valor
+        #preenche f2
+        valor = g2[pos]
+        while valor ∈ f2
+            valor = g1[findfirst(valor .== f2)]
+        end
+        f2[pos] = valor
+    end
+    #substitui os genitores pelos filhos
+    g1.=f1
+    g2.=f2
+end
+"""
+    Input: genitores 1 e 2
+    Realiza uma mistura Order Crossover entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
+"""
+function OX(g1, g2)
+    n = length(g1)
+    f1 = zeros(n)
+    f2 = zeros(n)
+
+    i = rand(1:n-1)
+    j = rand(i+1:n)
+    
+    f1[i:j] .= g1[i:j]
+    f2[i:j] .= g2[i:j]
+    #cria uma lista dos indices em ordem, a partir de j+1 até j(formando um ciclo)
+    list = []
+    if j < n
+        list = collect(j+1:n)
+    end
+    list = vcat(list, collect(1:j))
+
+    #preencheremos os restantes com oque sobrou, garantindo não repetição
+    for pos = 1:length(list)
+        if pos ∉ i:j
+            #preenche f1
+            posf1 = pos
+            #encontre a primeira ocorrência em g2 que não esteja em f1
+            while g2[list[posf1]] ∈ f1[pos]
+                posf1 += 1
+            end
+            f1[pos] = g2[list[posf1]]
+            
+            #preenche f2
+            posf2 = pos
+            #encontre a primeira ocorrência em g1 que não esteja em f2
+            while g1[list[posf2]] ∈ f2[pos]
+                posf2 += 1
+            end
+            f2[pos] = g1[list[posf2]]
+        end
+    end
+    #substitui os genitores pelos filhos
+    g1.=f1
+    g2.=f2
+end
+"""
+    Input: lista genitor 1, 2 e filho
+    Função auxiliar de CX, realiza a etapa de cycle crossover
+"""
+function CXaux(g1, g2, f)
+    f[1] = g1[1]
+    indice = 1
+    while true
+        #atualiza indice
+        indice = g2[f[indice]]
+        if g1[indice] ∉ f1
+            f[indice] = g1[indice]
+        else
+            #encontra toda posição que não esta preenchida e a preenche com o equivalente em g2
+            list = findall( 0 .== f)
+            f[list] .= g2[list]
+            break
+        end
+    end
+end
+"""
+    Input: genitores 1 e 2
+    Realiza uma mistura Cycle crossover entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
+"""
+function CX(g1, g2)
+    n = length(g1)
+    f1 = zeros(n)
+    f2 = zeros(n)
+    CXaux(g1, g2, f1)
+    CXaux(g2, g1, f2)
+
+    #substitui os genitores pelos filhos
+    g1.=f1
+    g2.=f2
+end
 """
     Input: genitores 1 e 2
     Realiza uma mistura entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
 """
-function crossover!(g1, g2)
+function crossover!(g1, g2, roletaCross)
+
+
 end
 """
     Input: genitores 1 e 2, conjunto da população e lista com valores de aptidão de cada individuo
@@ -18,6 +142,7 @@ function selecao!(g1, g2, populacao, aptidao)
     #seleciona g2, garantindo que seja diferente de g1
     while true
         randnum = rand()
+        #roleta
         g2 .= populacao[findfirst(randnum .<= aptidao), :]
         if g2 != g1
             break
@@ -39,7 +164,7 @@ end
         CN -> taxa de mutação;
 
 """
-function genetic(tsp, N=500, K=100, limite=10, CR=0.5, CM=0.5)
+function genetic(tsp, N=500, K=100, limite=10, CR=0.8, CM=0.05)
     contad = limite
 
     populacao = zeros(Int64, N, tsp.dimension)
