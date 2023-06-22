@@ -1,16 +1,17 @@
 include("tsp.jl")
 
 
-function simAnel!(tsp, t0, alfa, maxit, maxitSub; sol=[])
+function simAnel!(tsp, t0, alfa, maxit, maxitSub; sol=[], limite=50)
 	moves=[0.05, 0.8, 0.15]
 	n = tsp.dimension
 	T = t0
 	diff = 0
+    contad = limite
 	roleta = cumsum(moves)
-	dist = tspdist(tsp, sol)
     if isempty(sol)
         sol = copy(randperm(n))
     end
+	dist = tspdist(tsp, sol)
 	solGlob=copy(sol)
 
 	#inicia loop temperatura reduzindo
@@ -36,10 +37,18 @@ function simAnel!(tsp, t0, alfa, maxit, maxitSub; sol=[])
 				sol .= solLoc
 			end
 		end
-		solGlob .= (tspdist(tsp, sol) <= tspdist(tsp, solGlob)) ? sol : solGlob
+		#solGlob .= (tspdist(tsp, sol) <= tspdist(tsp, solGlob)) ? sol : solGlob
+        if tspdist(tsp, sol) <= tspdist(tsp, solGlob)
+            solGlob .= sol
+            contad = limite
+        end
 		T *= alfa
 		i += 1
 
+        contad-=1
+        if(contad <= 0)
+            break
+        end
 		tspplot(tsp, sol)
 		sleep(0.08)
 		println(tspdist(tsp, sol))
