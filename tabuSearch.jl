@@ -1,6 +1,6 @@
 include("tsp.jl")
 
-function objective(a, b)
+function objective(tsp, a, b)
 	#Testa os valores a e b e retorna true se b for melhor que a, falso do contrário
     dista = 0
     distb = 0
@@ -83,7 +83,7 @@ function buscaLocal!(tsp, sol, moves, r)
 				println("oops, função nao existe")
 			end
 			#encontrou uma solução melhor
-            if objective(solLocal, x)
+            if objective(tsp, solLocal, x)
 				solLocal .= x
 				iLoc = i
 			end

@@ -1,7 +1,7 @@
 include("tsp.jl")
 include("funcoes-teste.jl")
 
-function diffEvo(f, l, u; dimension=100, nPopulation=1000, kIter=20000, Fmin=0.2, Fmax=0.6, CR=0.1, Kmax=1000)
+function diffEvo(f, l, u; dimension=100, nPopulation=50, kIter=20000, Fmin=0.2, Fmax=0.6, CR=0.1, Kmax=1000)
     #verificando requisitos
     Kmax = floor(0.1*kIter)
     if nPopulation <= 4

@@ -28,7 +28,7 @@ function antColony(tsp; N=500, K=100, limite=10)
 
             for cidade = 2:tsp.dimension
                 #calculando probabilidades de visitar cidades vizinhas
-                probLocal .= feromonios[i, :].^alfa.*tsp.weights[i, :].^-beta
+                probLocal .= feromonios[i, :].^alfa.*tsp.weights[i, :].^-beta#atendar p divisao por zero
                 #removendo probabilidade para cidades ja visitadas
                 probLocal[naoVisitadas .== false] .= 0
 
