@@ -212,7 +212,7 @@ end
 
 """
 
-function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.2, sol=[])
+function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.05, sol=[])
     contad = limite
 
     populacao = zeros(Int64, N, tsp.dimension)
