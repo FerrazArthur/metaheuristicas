@@ -18,7 +18,7 @@ function simAnel!(tsp, t0, alfa, maxit, maxitSub; sol=[], limite=50)
 	for i = 1:maxit
 		#inicia loop temperatura constante
 		solLoc = zeros(Int64, length(sol))
-		for j = 1:maxit
+		for j = 1:maxitSub
 			solLoc .= sol#copia solucao atual
 			x = rand()
 			x = findfirst(x .<= roleta)
@@ -56,6 +56,9 @@ function simAnel!(tsp, t0, alfa, maxit, maxitSub; sol=[], limite=50)
 	sol .=solGlob
 	tspplot(tsp, sol)
 	sleep(0.08)
-	println(tspdist(tsp, sol))
+	println("Solução encontrada: ", tspdist(tsp, sol), "metros")
+    println("Solução ótima: ", tsp.optimal, " metros")
+    println("A diferença é ", tspdist(tsp, sol) - tsp.optimal, " metros, oque representa um erro de ",         (tspdist(tsp, sol)- tsp.optimal)*100/tsp.optimal,"%.")
+ 
     return sol
 end
