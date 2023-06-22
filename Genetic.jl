@@ -212,7 +212,7 @@ end
 
 """
 
-function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.2, inisol=[])
+function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.2, sol=[])
     contad = limite
 
     populacao = zeros(Int64, N, tsp.dimension)
@@ -228,10 +228,9 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.2, inisol=[])
         populacao[i,:] .=randperm(tsp.dimension)
         aptidao[i] = tspdist(tsp, populacao[i, :])
     end
-    if !isempty(inisol)
-        print("au\n")
-        populacao[1, :] .= inisol
-        aptidao[1] = tspdist(tsp, inisol)
+    if !isempty(sol)
+        populacao[1, :] .= sol[:]
+        aptidao[1] = tspdist(tsp, sol[:])
     end
     #atualizando lista ordenada crescente de aptidão entre os indivíduos
     ordemAptidao .= sortperm(aptidao)
@@ -249,12 +248,12 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.2, inisol=[])
                 crossover!(geni1, geni2)#ao fim de crossover, geni1 e geni2 serão seus filhos
             end
             #Atualiza o indivíduo atual para o melhor entre geni1 e geni2
-            if tspdist(tsp, geni1) < tspdist(tsp, geni2)
-                populacao[n, :] .= geni1
-                aptidao[n] = tspdist(tsp, geni1)
+            if tspdist(tsp, geni1[:]) < tspdist(tsp, geni2[:])
+                populacao[n, :] .= geni1[:]
+                aptidao[n] = tspdist(tsp, geni1[:])
             else
-                populacao[n, :] .= geni2
-                aptidao[n] = tspdist(tsp, geni2)
+                populacao[n, :] .= geni2[:]
+                aptidao[n] = tspdist(tsp, geni2[:])
             end
 
             #mutação
@@ -268,13 +267,13 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.2, inisol=[])
         end
 
         if isempty(melhor)
-            melhor = copy(populacao[ordemAptidao[end], :])
-        elseif tspdist(tsp, populacao[ordemAptidao[end], :]) < tspdist(tsp, melhor)
-            melhor .= populacao[ordemAptidao[end], :]
+            melhor = copy(populacao[ordemAptidao[1], :])
+        elseif tspdist(tsp, populacao[ordemAptidao[1], :]) < tspdist(tsp, melhor[:])
+            melhor .= populacao[ordemAptidao[1], :]
             contad = limite
         end
         #elitismo - mantendo o melhor global na lista
-        populacao[ordemAptidao[1], :] .= melhor
+        populacao[ordemAptidao[end], :] .= melhor[:]
 
         tspplot(tsp, melhor, "Indivíduo com menor trajetoria:")
         #sleep(0.08)

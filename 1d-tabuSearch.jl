@@ -143,13 +143,15 @@ function createMoves(n)
     return moves
 end
 
-function tabuSearch1d(tsp, sol, K=200)
+function tabuSearch1d(tsp; sol=[], K=200)
     # número de cidades
     n = tsp.dimension
     dist = 0
     
     # solução inicial(randomica)
-    #sol=randperm(n)
+    if isempty(sol)
+        sol=copy(randperm(n))
+    end
 
     #cria tabela de movimentos validos
     moves = createMoves1d(n)
@@ -175,7 +177,7 @@ function tabuSearch1d(tsp, sol, K=200)
         dist = tspdist(tsp, sol)
         println(dist)
         if lim == floor(0.15*K) || k == K
-            lim = k
+            lim = k# para impressao posterior
             break
         end
     end
@@ -185,6 +187,7 @@ function tabuSearch1d(tsp, sol, K=200)
     println("A diferença é ", dist - tsp.optimal, " metros, oque representa um erro de ",(dist - tsp.optimal)*100/tsp.optimal,"%.")
     println("o valor de r foi: ", r)
 
+    return sol
 end
 
 function config()
