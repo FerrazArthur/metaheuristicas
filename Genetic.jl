@@ -212,7 +212,7 @@ end
 
 """
 
-function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.05, sol=[])
+function genetic(tsp; N=1000, K=1000, limite=500, CR=0.6, CM=0.1, sol=[])
     contad = limite
 
     populacao = zeros(Int64, N, tsp.dimension)
@@ -229,8 +229,8 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.8, CM=0.05, sol=[])
         aptidao[i] = tspdist(tsp, populacao[i, :])
     end
     if !isempty(sol)
-        populacao[1, :] .= sol[:]
-        aptidao[1] = tspdist(tsp, sol[:])
+        populacao[tsp.dimension, :] .= sol[:]
+        aptidao[tsp.dimension] = tspdist(tsp, sol[:])
     end
     #atualizando lista ordenada crescente de aptidão entre os indivíduos
     ordemAptidao .= sortperm(aptidao)

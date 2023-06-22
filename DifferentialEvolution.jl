@@ -15,9 +15,9 @@ function diffEvo(f, l, u; dimension=100, nPopulation=1000, kIter=20000, Fmin=0.2
     end
     
     #gerando população aleatoriamente
-    currentpop = []
-    for i = 1:npopulation
-        append!(currentpop, [rand(l:0.001:u, dimension)])
+    currentPop = []
+    for i = 1:nPopulation
+        append!(currentPop, [rand(l:0.001:u, dimension)])
     end
     #criando vetor utilizado para armazenar crossovers
     crossOver = zeros(Float64,dimension)

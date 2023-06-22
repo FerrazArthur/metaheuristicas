@@ -1,10 +1,9 @@
 include("tsp.jl")
 
-function antColony(tsp, N=500, K=100)
+function antColony(tsp; N=500, K=100, limite=10)
     ro=0.1
     alfa = 1
     beta = 5
-    limite = 10
     contad = limite
     feromonios = zeros(Float64, tsp.dimension, tsp.dimension)
 
@@ -94,7 +93,8 @@ function antColony(tsp, N=500, K=100)
         end
         contad -= 1
     end
-    println("Menor trajeto encontrado é ", tspdist(tsp, melhor) - tsp.optimal, " metros menor que o trajeto ótimo do problema.(", round((tspdist(tsp, melhor) - tsp.optimal)/tsp.optimal; digits = 3),"% de erro)")
+    println("Menor trajeto encontrado é: ", tspdist(tsp, melhor), " metros")
+    println("Menor trajeto encontrado é ", tspdist(tsp, melhor) - tsp.optimal, " metros menor que o trajeto ótimo do problema.(", round((tspdist(tsp, melhor) - tsp.optimal)*100/tsp.optimal; digits = 3),"% de erro)")
     return melhor
 end
 
