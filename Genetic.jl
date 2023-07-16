@@ -119,7 +119,7 @@ end
     Input: genitores 1 e 2, pesos das funçoes PMX, OX e CX, respectivamente
     Realiza uma mistura entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
 """
-function crossover!(g1, g2; pesos=[1, 1, 1])
+function crossover!(g1, g2; pesos=[1, 1])
     roleta = pesos/sum(pesos[:])
     roleta = cumsum(roleta[:])
     sorteio = rand()
@@ -128,16 +128,16 @@ function crossover!(g1, g2; pesos=[1, 1, 1])
         PMX(g1, g2)
     elseif sorteio == 2
         OX(g1, g2)
-    else
-        #CX(g1, g2) ta dando problema, duplicando cidades
+    #else
+        #CX(g1, g2) #ta dando problema, duplicando cidades
     end
 end
 """
     Input: genitores 1 e 2, conjunto da população e lista com valores de aptidão de cada individuo
     Seleciona por roleta dois indivíduos distintos entre a população para serem g1 e g2
 """
-function selecao!(g1, g2, populacao, aptidao)
-    roleta = aptidao[:]/sum(aptidao[:])
+function selecao!(g1, g2, populacao, distancias)
+    roleta = distancias[:]/sum(distancias[:])
     roleta = cumsum(roleta[:])
     #seleciona g1
     randnum = rand()
@@ -216,30 +216,41 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.6, CM=0.1, sol=[])
     contad = limite
 
     populacao = zeros(Int64, N, tsp.dimension)
-    aptidao = zeros(Float64, N)
+    populacaoNova = zeros(Int64, N, tsp.dimension)
+    distancias = zeros(Float64, N)
+    distanciasNovas = zeros(Float64, N)
     geni1 = zeros(Int64, tsp.dimension)
     geni2 = zeros(Int64, tsp.dimension)
 
-    ordemAptidao = collect(1:N)
+    ordemDistancias = collect(1:N)
+
     melhor = []
 
     #gerando população inicial aleatóriamente
     for i = 1:N
         populacao[i,:] .=randperm(tsp.dimension)
-        aptidao[i] = tspdist(tsp, populacao[i, :])
+        distancias[i] = tspdist(tsp, populacao[i, :])
     end
     if !isempty(sol)
         populacao[tsp.dimension, :] .= sol[:]
-        aptidao[tsp.dimension] = tspdist(tsp, sol[:])
+        distancias[tsp.dimension] = tspdist(tsp, sol[:])
     end
     #atualizando lista ordenada crescente de aptidão entre os indivíduos
-    ordemAptidao .= sortperm(aptidao)
+    ordemDistancias .= sortperm(distancias)
+    
+    populacaoNova[:, :] .= populacao[:, :]
+    distanciasNovas[:] .= distancias[:]
+
+    #definindo a melhor solução inicial
+    melhor = copy(populacao[ordemDistancias[1], :])
+    melhorDist = tspdist(tsp, melhor[:])
+
 
     for k = 1:K #para cada iteração
         for n = 1:N # para cada indivíduo
             
             #seleção de progenitores
-            selecao!(geni1, geni2, populacao, aptidao)
+            selecao!(geni1, geni2, populacao, distancias)
             #crossover
             if length(unique(geni2)) != length(geni2) || length(unique(geni1)) != length(geni1)
                 return
@@ -249,41 +260,47 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.6, CM=0.1, sol=[])
             end
             #Atualiza o indivíduo atual para o melhor entre geni1 e geni2
             if tspdist(tsp, geni1[:]) < tspdist(tsp, geni2[:])
-                populacao[n, :] .= geni1[:]
-                aptidao[n] = tspdist(tsp, geni1[:])
+                populacaoNova[n, :] .= geni1[:]
+                distanciasNovas[n] = tspdist(tsp, geni1[:])
             else
-                populacao[n, :] .= geni2[:]
-                aptidao[n] = tspdist(tsp, geni2[:])
+                populacaoNova[n, :] .= geni2[:]
+                distanciasNovas[n] = tspdist(tsp, geni2[:])
             end
 
             #mutação
             if rand() <= CM
-                mutacao!(populacao[n, :])
-                aptidao[n] = tspdist(tsp, populacao[n, :])
+                mutacao!(populacaoNova[n, :])
+                distanciasNovas[n] = tspdist(tsp, populacaoNova[n, :])
             end
             
-            #atualizando ordem de aptidão entre os indivíduos
-            ordemAptidao .= sortperm(aptidao)
         end
 
-        if isempty(melhor)
-            melhor = copy(populacao[ordemAptidao[1], :])
-        elseif tspdist(tsp, populacao[ordemAptidao[1], :]) < tspdist(tsp, melhor[:])
-            melhor .= populacao[ordemAptidao[1], :]
+        #atualizando ordem de menores distancias entre os indivíduos
+        ordemDistancias .= sortperm(distanciasNovas)
+
+        #elitismo - mantendo o melhor global na lista
+        populacaoNova[ordemDistancias[end], :] .= melhor[:]
+        distanciasNovas[ordemDistancias[end]] = melhorDist
+
+        if tspdist(tsp, populacaoNova[ordemDistancias[1], :]) < melhorDist
+            melhor .= populacaoNova[ordemDistancias[1], :]
+            melhorDist = tspdist(tsp, melhor[:])
             contad = limite
         end
-        #elitismo - mantendo o melhor global na lista
-        populacao[ordemAptidao[end], :] .= melhor[:]
+        
+        #atualizando população anterior
+        populacao[:, :] .= populacaoNova[:, :]
+        distancias[:] .= distanciasNovas[:]
 
         tspplot(tsp, melhor, "Indivíduo com menor trajetoria:")
         #sleep(0.08)
-        println("Menor trajeto até então: ", tspdist(tsp, melhor), " metros")
+        println("Menor trajeto até então: ", melhorDist, " metros")
         if contad == 0
             break
         end
         contad -= 1
     end
-    println("Menor trajeto encontrado é ", tspdist(tsp, melhor) - tsp.optimal, " metros menor que o trajeto ótimo do problema.(", round((tspdist(tsp, melhor) - tsp.optimal)*100.0/tsp.optimal; digits = 3),"% de erro)")
+    println("Menor trajeto encontrado é ", melhorDist - tsp.optimal, " metros menor que o trajeto ótimo do problema.(", round((melhorDist - tsp.optimal)*100.0/tsp.optimal; digits = 3),"% de erro)")
     return melhor
 end
 
