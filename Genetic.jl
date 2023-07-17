@@ -84,6 +84,11 @@ end
     Função auxiliar de CX, realiza a etapa de cycle crossover
 """
 function CXaux(g1, g2, f)
+#    indice = 1
+#    while (f[indice] == 0)
+#        f[indice] = g1[indice]
+#        indice = g2[indice]
+#    end
     f[1] = g1[1]
     indice = 1
     while true
@@ -105,31 +110,53 @@ end
     Realiza uma mistura Cycle crossover entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
 """
 function CX(g1, g2)
+#    n = length(g1)
+#    f1 = zeros(Int64, n)
+#    f2 = zeros(Int64, n)
+#    CXaux(g1, g2, f1)
+#    CXaux(g2, g1, f2)
+#
+#    #substitui os genitores pelos filhos
+#    g1.=f1
+#    g2.=f2
     n = length(g1)
     f1 = zeros(Int64, n)
     f2 = zeros(Int64, n)
-    CXaux(g1, g2, f1)
-    CXaux(g2, g1, f2)
 
-    #substitui os genitores pelos filhos
-    g1.=f1
-    g2.=f2
+    #filho 1 identifica ciclo
+    p = 1
+    while (f1[p] == 0)
+        f1[p] = g1[p]
+        p = g2[p]
+    end
+    
+    #ciclo gravado nas posições > 0 em filho 1
+    ciclo = f1[:] .> 0
+    f2[ciclo] .= g2[ciclo]
+    
+    #posições faltantes
+    f1[.!ciclo] .= setdiff(g2[:], f1[ciclo])
+    f2[.!ciclo] .= setdiff(g1[:], f2[ciclo])
+
+    g1 .= f1
+    g2 .= f2
+
 end
 """
     Input: genitores 1 e 2, pesos das funçoes PMX, OX e CX, respectivamente
     Realiza uma mistura entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
 """
-function crossover!(g1, g2; pesos=[1, 1])
-    roleta = pesos/sum(pesos[:])
-    roleta = cumsum(roleta[:])
+function crossover!(g1, g2; pesos=[0.75, 0.15, 0.1])
+#    roleta = pesos/sum(pesos[:])
+    roleta = cumsum(pesos[:])
     sorteio = rand()
     sorteio = findfirst(sorteio .<= roleta)
     if sorteio == 1
         PMX(g1, g2)
     elseif sorteio == 2
         OX(g1, g2)
-    #else
-        #CX(g1, g2) #ta dando problema, duplicando cidades
+    else
+        CX(g1, g2) 
     end
 end
 """
@@ -187,8 +214,10 @@ function sbm!(individuo)
     shuffle!(individuo[i:j])
 end
 
-function mutacao!(individuo)
-    decide = rand(1:4)
+function mutacao!(individuo, pesos = [0.05, 0.05, 0.5, 0.4])
+    roleta = cumsum(pesos[:])
+    decide = rand()
+    decide = findfirst(decide .<= roleta)
     if decide == 1
         pbm!(individuo)
     elseif decide == 2
@@ -214,7 +243,6 @@ end
 
 function genetic(tsp; N=1000, K=1000, limite=500, CR=0.6, CM=0.1, sol=[])
     contad = limite
-
     populacao = zeros(Int64, N, tsp.dimension)
     populacaoNova = zeros(Int64, N, tsp.dimension)
     distancias = zeros(Float64, N)
@@ -303,4 +331,3 @@ function genetic(tsp; N=1000, K=1000, limite=500, CR=0.6, CM=0.1, sol=[])
     println("Menor trajeto encontrado é ", melhorDist - tsp.optimal, " metros menor que o trajeto ótimo do problema.(", round((melhorDist - tsp.optimal)*100.0/tsp.optimal; digits = 3),"% de erro)")
     return melhor
 end
-

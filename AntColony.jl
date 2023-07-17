@@ -1,6 +1,6 @@
 include("tsp.jl")
 
-function antColony(tsp; N=500, K=100, limite=10)
+function antColony(tsp; N=100, K=5, limite=10)
     ro=0.1
     alfa = 1
     beta = 5
