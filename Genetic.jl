@@ -80,45 +80,10 @@ function OX(g1, g2)
     g2.=f2
 end
 """
-    Input: lista genitor 1, 2 e filho
-    Função auxiliar de CX, realiza a etapa de cycle crossover
-"""
-function CXaux(g1, g2, f)
-#    indice = 1
-#    while (f[indice] == 0)
-#        f[indice] = g1[indice]
-#        indice = g2[indice]
-#    end
-    f[1] = g1[1]
-    indice = 1
-    while true
-        #atualiza indice
-        indice = g2[indice]
-
-        if g1[indice] ∉ f
-            f[indice] = g1[indice]
-        else
-            #encontra toda posição que não esta preenchida e a preenche com o equivalente em g2
-            list = findall( 0 .== f)
-            f[list] .= g2[list]
-            break
-        end
-    end
-end
-"""
     Input: genitores 1 e 2
     Realiza uma mistura Cycle crossover entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
 """
 function CX(g1, g2)
-#    n = length(g1)
-#    f1 = zeros(Int64, n)
-#    f2 = zeros(Int64, n)
-#    CXaux(g1, g2, f1)
-#    CXaux(g2, g1, f2)
-#
-#    #substitui os genitores pelos filhos
-#    g1.=f1
-#    g2.=f2
     n = length(g1)
     f1 = zeros(Int64, n)
     f2 = zeros(Int64, n)
