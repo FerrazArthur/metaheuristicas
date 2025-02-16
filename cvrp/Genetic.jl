@@ -1,298 +1,145 @@
-include("tsp.jl")
+include("cvrp.jl")
 
 """
     Input: genitores 1 e 2
-    Realiza uma mistura Partially mapped entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
+    Realiza uma mistura entre os valores de g1 e g2 para gerar um novo indivíduo
+    que será sobrescrito em g1
 """
-function PMX(g1, g2)
-    n = length(g1)
-    f1 = zeros(Int64, n)
-    f2 = zeros(Int64, n)
-
-    i = rand(1:n-1)
-    j = rand(i+1:n)
-    
-    f2[i:j] .= g1[i:j]
-    f1[i:j] .= g2[i:j]
-    #cria uma lista de indices que faltam preencher
-    list = []
-    if i > 1
-        list = collect(1:i-1)
-    end
-    if j < n
-        list = vcat(list, collect(j+1:n))
-    end
-    #preencheremos os restantes com oque sobrou, garantindo não repetição
-    for pos in list
-        #preenche f1
-        valor = g1[pos]
-        while valor ∈ f1#usa o mapeamento pra substituir
-            valor = f2[findfirst( valor .== f1)]
-        end
-        f1[pos] = valor
-
-        #preenche f2
-        valor = g2[pos]
-        while valor ∈ f2
-            valor = f1[findfirst(valor .== f2)]
-        end
-        f2[pos] = valor
-    end
-    #substitui os genitores pelos filhos
-    g1.=f1
-    g2.=f2
+# parametrized uniform crossover
+function crossover!(g1, g2; CH=0.7)
+    mask = rand(length(g1)) .< CH  # Generate a boolean mask based on CH
+    g1 .= mask .* g1 .+ .!mask .* g2  # Apply crossover
 end
-"""
-    Input: genitores 1 e 2
-    Realiza uma mistura Order Crossover entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
-"""
-function OX(g1, g2)
-    n = length(g1)
-    f1 = zeros(Int64, n)
-    f2 = zeros(Int64, n)
 
-    i = rand(1:n-1)
-    j = rand(i+1:n)
-    
-    f1[i:j] .= g1[i:j]
-    f2[i:j] .= g2[i:j]
-    #cria uma lista dos indices em ordem, a partir de j+1 até j(formando um ciclo)
-    listg1 = []
-    listg2 = []
-    if j < n
-        listg1 = copy(g1[j+1:n])
-        listg2 = copy(g2[j+1:n])
-    end
-    listg1 = vcat(listg1, g1[1:j])
-    listg2 = vcat(listg2, g2[1:j])
-
-    #preencheremos os restantes com oque sobrou, garantindo não repetição
-    for pos = 1:n
-        if pos ∉ i:j
-            #preenche f1
-            f1[pos] = listg2[findfirst(listg2 .∉ Ref(f1))]
-            #preenche f2
-            f2[pos] = listg1[findfirst(listg1 .∉ Ref(f2))]
-        end
-    end
-    #substitui os genitores pelos filhos
-    g1.=f1
-    g2.=f2
-end
 """
-    Input: genitores 1 e 2
-    Realiza uma mistura Cycle crossover entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
+    Input: conjunto da população e lista com valores de custo
+    de cada individuo.
+    Seleciona por roleta dois indivíduos distintos entre a população para serem
+    g1 e g2, garantindo que g1 seja uma solução melhor que g2
+    Return: g1, g2, dois genitores selecionados
 """
-function CX(g1, g2)
-    n = length(g1)
-    f1 = zeros(Int64, n)
-    f2 = zeros(Int64, n)
-
-    #filho 1 identifica ciclo
-    p = 1
-    while (f1[p] == 0)
-        f1[p] = g1[p]
-        p = g2[p]
-    end
-    
-    #ciclo gravado nas posições > 0 em filho 1
-    ciclo = f1[:] .> 0
-    f2[ciclo] .= g2[ciclo]
-    
-    #posições faltantes
-    f1[.!ciclo] .= setdiff(g2[:], f1[ciclo])
-    f2[.!ciclo] .= setdiff(g1[:], f2[ciclo])
-
-    g1 .= f1
-    g2 .= f2
-
-end
-"""
-    Input: genitores 1 e 2, pesos das funçoes PMX, OX e CX, respectivamente
-    Realiza uma mistura entre os valores de g1 e g2 para gerar duas novas amostras, que serão sobrescritas em g1 e g2
-"""
-function crossover!(g1, g2; pesos=[0.75, 0.15, 0.1])
-#    roleta = pesos/sum(pesos[:])
-    roleta = cumsum(pesos[:])
-    sorteio = rand()
-    sorteio = findfirst(sorteio .<= roleta)
-    if sorteio == 1
-        PMX(g1, g2)
-    elseif sorteio == 2
-        OX(g1, g2)
-    else
-        CX(g1, g2) 
-    end
-end
-"""
-    Input: genitores 1 e 2, conjunto da população e lista com valores de aptidão de cada individuo
-    Seleciona por roleta dois indivíduos distintos entre a população para serem g1 e g2
-"""
-function selecao!(g1, g2, populacao, distancias)
-    roleta = distancias[:]/sum(distancias[:])
+function selecao!(populacao, custos)
+    roleta = custos[:]/sum(custos[:])
     roleta = cumsum(roleta[:])
+
+    g1 = similar(populacao[1, :])
+    g2 = similar(populacao[1, :])
     #seleciona g1
     randnum = rand()
-    randnum = findfirst(randnum .<= roleta)
-    g1 .= populacao[randnum, :]
-    #seleciona g2, garantindo que seja diferente de g1
+    first_found = findfirst(randnum .<= roleta)
+    second_found = 0;
     while true
         randnum = rand()
-        randnum = findfirst(randnum .<= roleta)
-        #roleta
-        g2 .= populacao[randnum, :]
-        if g2[:] != g1[:]
+        second_found = findfirst(randnum .<= roleta)
+        if first_found != second_found
             break
         end
     end
-end
 
-function pbm!(individuo)
-    n = length(individuo)
-    i = rand(1:n-1)
-    j = rand(i+1:n)
-    tmp = individuo[i]
-    deleteat!(individuo, i)
-    insert!(individuo, j, tmp)
-end
-
-function obm!(individuo)
-    n = length(individuo)
-    i = rand(1:n-1)
-    j = rand(i+1:n)
-    aux = individuo[i]
-    individuo[i] = individuo[j]
-    individuo[j] = aux
-end
-
-function ibm!(individuo)
-    n = length(individuo)
-    i = rand(1:n-1)
-    j = rand(i+1:n)
-    reverse!(individuo, i, j)
-end
-
-function sbm!(individuo)
-    n = length(individuo)
-    i = rand(1:n-1)
-    j = rand(i+1:n)
-    shuffle!(individuo[i:j])
-end
-
-function mutacao!(individuo, pesos = [0.05, 0.05, 0.5, 0.4])
-    roleta = cumsum(pesos[:])
-    decide = rand()
-    decide = findfirst(decide .<= roleta)
-    if decide == 1
-        pbm!(individuo)
-    elseif decide == 2
-        obm!(individuo)
-    elseif decide == 3
-        ibm!(individuo)
+    if custos[first_found] < custos[second_found]
+        g1 .= populacao[first_found, :]
+        g2 .= populacao[second_found, :]
     else
-        sbm!(individuo)
+        g1 .= populacao[second_found, :]
+        g2 .= populacao[first_found, :]
     end
+    return g1, g2
 end
 
 """
     Input:
-        tsp -> Instância tsp(do inglês 'traveling sallesman problem') do pacote tsplib;
+        cvrp -> Instância cvrp(do inglês 'Capacitated Vehicle Routing Problem')
+        do pacote cvrplib;
         N -> Número de indivíduos na população;
         K -> Quantidade de iterações máxima;
         limite -> Quantidade máxima de interações subsequentes sem atualização
             do melhor global;
-        CR -> taxa de crossover;
-        CN -> taxa de mutação;
-
 """
-
-function genetic(tsp; N=1000, K=1000, limite=500, CR=0.6, CM=0.1, sol=[])
+function genetic(cvrp, min_vehicles; N=10000, K=1000, limite=500,
+                    crossover_p=0.70, mutation_p=0.1)
     contad = limite
-    populacao = zeros(Int64, N, tsp.dimension)
-    populacaoNova = zeros(Int64, N, tsp.dimension)
-    distancias = zeros(Float64, N)
-    distanciasNovas = zeros(Float64, N)
-    geni1 = zeros(Int64, tsp.dimension)
-    geni2 = zeros(Int64, tsp.dimension)
 
-    ordemDistancias = collect(1:N)
-
-    melhor = []
-
-    #gerando população inicial aleatóriamente
-    for i = 1:N
-        populacao[i,:] .=randperm(tsp.dimension)
-        distancias[i] = tspdist(tsp, populacao[i, :])
+    if (cvrp.depot != 1)
+        print("Depósito não é a primeira cidade")
+        return
     end
-    if !isempty(sol)
-        populacao[tsp.dimension, :] .= sol[:]
-        distancias[tsp.dimension] = tspdist(tsp, sol[:])
+    if (cvrp.weight_type != "EUC_2D")
+        print("Tipo de peso não é EUC_2D")
+        return
     end
-    #atualizando lista ordenada crescente de aptidão entre os indivíduos
-    ordemDistancias .= sortperm(distancias)
-    
-    populacaoNova[:, :] .= populacao[:, :]
-    distanciasNovas[:] .= distancias[:]
+    if (cvrp.distance != Inf)
+        print("Distância não é infinita")
+        return
+    end
+    if (cvrp.service_time != 0)
+        print("Tempo de serviço não é 0")
+        return
+    end
 
-    #definindo a melhor solução inicial
-    melhor = copy(populacao[ordemDistancias[1], :])
-    melhorDist = tspdist(tsp, melhor[:])
+    geni1 = zeros(Float64, cvrp.dimension)
+    geni2 = zeros(Float64, cvrp.dimension)
 
+    # Generate initial population
+    populacao = Matrix{Float64}(undef, N, cvrp.dimension)
+    for i in 1:N
+        populacao[i, :] = rand(cvrp.dimension) .+ rand(1:min_vehicles, cvrp.dimension)
+    end
+    melhor = similar(populacao[1, :])
+    melhorDist = Inf
 
-    for k = 1:K #para cada iteração
-        for n = 1:N # para cada indivíduo
+    crossover_tax = Int(round(crossover_p * N))
+    mutation_tax = Int(round(mutation_p * N))
+
+    for k = 1:K
+        # Evaluate population
+        custos = [cvrpdist(cvrp, populacao[i, :], min_vehicles) for i in 1:N]
+        ordemCustos = sortperm(custos)
+        populacao = populacao[ordemCustos, :]
+        custos = custos[ordemCustos]
+
+        melhor = copy(populacao[1, :])
+        melhorDist = custos[1]
+        
+        for n in 1:crossover_tax
+            geni1 = similar(populacao[1, :])
+            geni2 = similar(populacao[1, :])
+            geni1, geni2 = selecao!(populacao, custos)
             
-            #seleção de progenitores
-            selecao!(geni1, geni2, populacao, distancias)
-            #crossover
-            if length(unique(geni2)) != length(geni2) || length(unique(geni1)) != length(geni1)
-                return
-            end
-            if rand() <= CR
-                crossover!(geni1, geni2)#ao fim de crossover, geni1 e geni2 serão seus filhos
-            end
-            #Atualiza o indivíduo atual para o melhor entre geni1 e geni2
-            if tspdist(tsp, geni1[:]) < tspdist(tsp, geni2[:])
-                populacaoNova[n, :] .= geni1[:]
-                distanciasNovas[n] = tspdist(tsp, geni1[:])
-            else
-                populacaoNova[n, :] .= geni2[:]
-                distanciasNovas[n] = tspdist(tsp, geni2[:])
-            end
+            crossover!(geni1, geni2)
+            populacao[N - crossover_tax - mutation_tax + n, :] .= geni1[:]
+            custos[N - crossover_tax - mutation_tax + n] =
+                                            cvrpdist(cvrp, geni1[:], min_vehicles)
 
-            #mutação
-            if rand() <= CM
-                mutacao!(populacaoNova[n, :])
-                distanciasNovas[n] = tspdist(tsp, populacaoNova[n, :])
+            if (custos[N - crossover_tax - mutation_tax + n] < melhorDist)
+                melhor .= geni1[:]
+                melhorDist = custos[N - crossover_tax - mutation_tax + n]
+                contad = limite
             end
-            
-        end
-
-        #atualizando ordem de menores distancias entre os indivíduos
-        ordemDistancias .= sortperm(distanciasNovas)
-
-        #elitismo - mantendo o melhor global na lista
-        populacaoNova[ordemDistancias[end], :] .= melhor[:]
-        distanciasNovas[ordemDistancias[end]] = melhorDist
-
-        if tspdist(tsp, populacaoNova[ordemDistancias[1], :]) < melhorDist
-            melhor .= populacaoNova[ordemDistancias[1], :]
-            melhorDist = tspdist(tsp, melhor[:])
-            contad = limite
         end
         
-        #atualizando população anterior
-        populacao[:, :] .= populacaoNova[:, :]
-        distancias[:] .= distanciasNovas[:]
+        # introduce mutation using imigration concept
+        for n in 1:mutation_tax
+            populacao[N - mutation_tax + n, :] .=
+                rand(cvrp.dimension) .+ rand(1:min_vehicles, cvrp.dimension)
+            custos[N - mutation_tax + n] =
+                cvrpdist(cvrp, populacao[N - mutation_tax + n, :], min_vehicles)
 
-        tspplot(tsp, melhor, "Indivíduo com menor trajetoria:")
-        #sleep(0.08)
+            if (custos[N - mutation_tax + n] < melhorDist)
+                melhor = copy(populacao[N - mutation_tax + n, :])
+                melhorDist = custos[N - mutation_tax + n]
+                contad = limite
+            end
+        end
+
+        cvrpplot(cvrp, min_vehicles, melhor, "Indivíduo com menor trajetoria:")
+        sleep(0.08)
         println("Menor trajeto até então: ", melhorDist, " metros")
         if contad == 0
             break
         end
         contad -= 1
     end
-    println("Menor trajeto encontrado é ", melhorDist - tsp.optimal, " metros menor que o trajeto ótimo do problema.(", round((melhorDist - tsp.optimal)*100.0/tsp.optimal; digits = 3),"% de erro)")
+    
+    # println("Menor custo encontrado é ", melhorDist - cvrp.optimal, " metros menor que o custo ótimo do problema. (", round((melhorDist - cvrp.optimal) * 100.0 / cvrp.optimal; digits=3), "% de erro)")
     return melhor
 end
