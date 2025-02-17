@@ -31,11 +31,11 @@ function cvrpplot(cvrp, min_vehicles, solution, title="")
     
     # Plota as cidades (clientes)
     for i = 2:(n + 1)
-        fig = scatter!([cvrp.coordinates[i,1]], [cvrp.coordinates[i,2]], color = "red", mark = :o, markersize = 3)
+        fig = scatter!([cvrp.coordinates[i,1]], [cvrp.coordinates[i,2]], color = "red", mark = :o, markersize = 2)
     end
     
     # Plota o depósito
-    fig = scatter!([cvrp.coordinates[1,1]], [cvrp.coordinates[1,2]], color = "blue", mark = :square, markersize = 5, label = "Depósito")
+    fig = scatter!([cvrp.coordinates[1,1]], [cvrp.coordinates[1,2]], color = "blue", mark = :square, markersize = 2, label = "Depósito")
     
     # Plota as rotas dos veículos
     colors = distinguishable_colors(length(solution))

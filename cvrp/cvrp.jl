@@ -7,12 +7,13 @@
 ###################################################
 
 using CVRPLIB
+using Dates
 
 include("cvrpplot.jl")
 
 # Solution cost
-function cvrpdist!(cvrp, encoded_solution, min_vehicles)
-    solution = decode_solution!(encoded_solution, cvrp, min_vehicles)
+function cvrpdist!(cvrp, encoded_solution, num_vehicles)
+    solution = decode_solution!(encoded_solution, cvrp, num_vehicles)
     total_dist = 0
     
     for route in solution
@@ -59,9 +60,9 @@ end
 # random number in [0, 1[
 # Surpassing the cvrp.capacity of a vehicle, a greedy approach is used to find the
 # closest vehicle with space and the encoded_solution is reforged
-function decode_solution!(encoded_solution, cvrp, min_vehicles)
-    solution = [[] for _ in 1:min_vehicles]
-    vehicle_loads = zeros(min_vehicles)
+function decode_solution!(encoded_solution, cvrp, num_vehicles)
+    solution = [[] for _ in 1:num_vehicles]
+    vehicle_loads = zeros(num_vehicles)
     remaining_clients = []
     
     # Separate the vehicle and the random number
@@ -91,7 +92,7 @@ function decode_solution!(encoded_solution, cvrp, min_vehicles)
     for client in remaining_clients
         best_vehicle, best_position, best_cost = -1, -1, Inf
         
-        for v in 1:min_vehicles
+        for v in 1:num_vehicles
             if vehicle_loads[v] + cvrp.demand[client] > cvrp.capacity
                 continue
             end
@@ -108,12 +109,21 @@ function decode_solution!(encoded_solution, cvrp, min_vehicles)
             insert!(solution[best_vehicle], best_position, client)
             vehicle_loads[best_vehicle] += cvrp.demand[client]
         else
-            println("Client $client could not be inserted")
+            println("Client $client demanded a new vehicle")
+            push!(solution, [1, client, 1])
+            push!(vehicle_loads, cvrp.demand[client])
+            num_vehicles += 1
+            # println("Client $client could not be inserted")
+            # println("Client $client demand: ", cvrp.demand[client])
+            # println("Vehicle loads: ", vehicle_loads)
         end
     end
     
+    # Apply 2-opt heuristic to improve routes
+    Opt2!(cvrp, solution)
+
     # Update encoded solution with respect to the established order
-    for v in 1:min_vehicles
+    for v in 1:num_vehicles
         sorted_positions = sortperm([findfirst(==(client), solution[v])
             for client in solution[v] if client != 1])
         for (order, client) in enumerate(solution[v][sorted_positions])
@@ -126,21 +136,27 @@ function decode_solution!(encoded_solution, cvrp, min_vehicles)
     return solution
 end
 
-function Opt2!(cvrp, solution, min_vehicles)
-    melhor = cvrpdist(cvrp, solution, min_vehicles)
-    
+function routeDist(cvrp, route)
+    dist = 0.0
+    for i in 1:(length(route) - 1)
+        dist += cvrp.weights[route[i], route[i+1]]
+    end
+    return dist
+end
+
+function Opt2!(cvrp, solution)
     for route in solution
+        melhor = routeDist(cvrp, route)
         if length(route) > 3
             for i = 2:length(route)-2
                 for j = i+1:length(route)-1
-                    new_route = copy(route)
+                    new_route = similar(route)
+                    new_route .= route
                     reversao!(new_route, i, j)
-                    new_sol = copy(solution)
-                    new_sol[solution .== route] = [new_route]
-                    new_dist = cvrpdist(cvrp, new_sol, min_vehicles)
+                    new_dist = routeDist(cvrp, new_route)
                     
                     if new_dist < melhor
-                        solution .= new_sol
+                        route .= new_route
                         melhor = new_dist
                     end
                 end
