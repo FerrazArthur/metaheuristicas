@@ -12,7 +12,7 @@ using Random
 function cvrpplot(cvrp, min_vehicles, solution, title="")
     # Número de cidades (excluindo o depósito)
     n = cvrp.dimension - 1
-    solution = decode_solution(solution, min_vehicles, cvrp.demand, cvrp.capacity)
+    solution = decode_solution!(solution, cvrp, min_vehicles)
     # Coordenadas mínimas e máximas
     xmin = minimum(cvrp.coordinates[:,1])
     xmax = maximum(cvrp.coordinates[:,1])

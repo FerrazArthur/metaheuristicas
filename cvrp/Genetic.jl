@@ -55,8 +55,8 @@ end
         limite -> Quantidade máxima de interações subsequentes sem atualização
             do melhor global;
 """
-function genetic(cvrp, min_vehicles; N=10000, K=1000, limite=500,
-                    crossover_p=0.70, mutation_p=0.1)
+function genetic(cvrp, min_vehicles; N=2000, K=1000, limite=500,
+                    crossover_p=0.79, mutation_p=0.01)
     contad = limite
 
     if (cvrp.depot != 1)
@@ -92,7 +92,7 @@ function genetic(cvrp, min_vehicles; N=10000, K=1000, limite=500,
 
     for k = 1:K
         # Evaluate population
-        custos = [cvrpdist(cvrp, populacao[i, :], min_vehicles) for i in 1:N]
+        custos = [cvrpdist!(cvrp, populacao[i, :], min_vehicles) for i in 1:N]
         ordemCustos = sortperm(custos)
         populacao = populacao[ordemCustos, :]
         custos = custos[ordemCustos]
@@ -108,7 +108,7 @@ function genetic(cvrp, min_vehicles; N=10000, K=1000, limite=500,
             crossover!(geni1, geni2)
             populacao[N - crossover_tax - mutation_tax + n, :] .= geni1[:]
             custos[N - crossover_tax - mutation_tax + n] =
-                                            cvrpdist(cvrp, geni1[:], min_vehicles)
+                                            cvrpdist!(cvrp, geni1[:], min_vehicles)
 
             if (custos[N - crossover_tax - mutation_tax + n] < melhorDist)
                 melhor .= geni1[:]
@@ -122,7 +122,7 @@ function genetic(cvrp, min_vehicles; N=10000, K=1000, limite=500,
             populacao[N - mutation_tax + n, :] .=
                 rand(cvrp.dimension) .+ rand(1:min_vehicles, cvrp.dimension)
             custos[N - mutation_tax + n] =
-                cvrpdist(cvrp, populacao[N - mutation_tax + n, :], min_vehicles)
+                cvrpdist!(cvrp, populacao[N - mutation_tax + n, :], min_vehicles)
 
             if (custos[N - mutation_tax + n] < melhorDist)
                 melhor = copy(populacao[N - mutation_tax + n, :])
@@ -130,7 +130,6 @@ function genetic(cvrp, min_vehicles; N=10000, K=1000, limite=500,
                 contad = limite
             end
         end
-
         cvrpplot(cvrp, min_vehicles, melhor, "Indivíduo com menor trajetoria:")
         sleep(0.08)
         println("Menor trajeto até então: ", melhorDist, " metros")

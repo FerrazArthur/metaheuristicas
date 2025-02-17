@@ -10,10 +10,9 @@ using CVRPLIB
 
 include("cvrpplot.jl")
 
-# Custo da solução sol no CVRP
-function cvrpdist(cvrp, encoded_solution, min_vehicles)
-    solution = decode_solution(encoded_solution, min_vehicles,
-                cvrp.demand, cvrp.capacity)
+# Solution cost
+function cvrpdist!(cvrp, encoded_solution, min_vehicles)
+    solution = decode_solution!(encoded_solution, cvrp, min_vehicles)
     total_dist = 0
     
     for route in solution
@@ -56,11 +55,14 @@ function roleta(p)
     return findfirst(r .<= c)
 end
 
-# Decodificação da solução BRKGA para CVRP
 # Each element of endoded_solution is composed of a integer for a vehicle plus a
 # random number in [0, 1[
-function decode_solution(encoded_solution, min_vehicles, demands, capacity)
+# Surpassing the cvrp.capacity of a vehicle, a greedy approach is used to find the
+# closest vehicle with space and the encoded_solution is reforged
+function decode_solution!(encoded_solution, cvrp, min_vehicles)
     solution = [[] for _ in 1:min_vehicles]
+    vehicle_loads = zeros(min_vehicles)
+    remaining_clients = []
     
     # Separate the vehicle and the random number
     decoded = [(Int(floor(x)), x - floor(x)) for x in encoded_solution]
@@ -70,20 +72,12 @@ function decode_solution(encoded_solution, min_vehicles, demands, capacity)
     sorted_clients = sort(collect(enumerate(decoded)), by=x -> x[2][2])
     
     # Assign clients to vehicles
-    vehicle_loads = zeros(min_vehicles)  # Track load per vehicle
     for (client, (vehicle, _)) in sorted_clients
-        if vehicle_loads[vehicle] + demands[client] <= capacity
+        if vehicle_loads[vehicle] + cvrp.demand[client] <= cvrp.capacity
             push!(solution[vehicle], client)
-            vehicle_loads[vehicle] += demands[client]
+            vehicle_loads[vehicle] += cvrp.demand[client]
         else
-            # Find a vehicle with space
-            for v in 1:min_vehicles
-                if vehicle_loads[v] + demands[client] <= capacity
-                    push!(solution[v], client)
-                    vehicle_loads[v] += demands[client]
-                    break
-                end
-            end
+            push!(remaining_clients, client)
         end
     end
     
@@ -92,7 +86,43 @@ function decode_solution(encoded_solution, min_vehicles, demands, capacity)
         pushfirst!(route, 1)
         push!(route, 1)
     end
+
+    # Insert remaining clients in the best position of any route
+    for client in remaining_clients
+        best_vehicle, best_position, best_cost = -1, -1, Inf
+        
+        for v in 1:min_vehicles
+            if vehicle_loads[v] + cvrp.demand[client] > cvrp.capacity
+                continue
+            end
+            for pos in 2:length(solution[v])
+                new_cost = cvrp.weights[solution[v][pos-1], client] + cvrp.weights[client, solution[v][pos]] - cvrp.weights[solution[v][pos-1], solution[v][pos]]
+                
+                if new_cost < best_cost
+                    best_vehicle, best_position, best_cost = v, pos, new_cost
+                end
+            end
+        end
+        
+        if best_vehicle != -1
+            insert!(solution[best_vehicle], best_position, client)
+            vehicle_loads[best_vehicle] += cvrp.demand[client]
+        else
+            println("Client $client could not be inserted")
+        end
+    end
     
+    # Update encoded solution with respect to the established order
+    for v in 1:min_vehicles
+        sorted_positions = sortperm([findfirst(==(client), solution[v])
+            for client in solution[v] if client != 1])
+        for (order, client) in enumerate(solution[v][sorted_positions])
+            if client != 1  # Skip depot
+                encoded_solution[client] = v + order / (length(solution[v]) + 1)
+            end
+        end
+    end
+
     return solution
 end
 
