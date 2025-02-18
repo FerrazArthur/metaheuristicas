@@ -18,11 +18,20 @@ Repositório com metaheuristicas escritas em Julia para disciplina optativa
     ]add Plots
     ```
 
-- Adicione o seu codigo  
+- Inclua o código 
     ```bash
     include("nome do arquivo".jl")
     ```
+    > Devido à abordagem lazy para resolução de dependências, as duas ou três primeiras
+    > Tentativas darão erro: apenas insista e será resolvido.
+
 - Adicione uma instancia 
     ```bash
-    cvrp = readCVRPLIB([nome do modelo cvrp]) exemplo 
+    cvrp, _, _ = readCVRPLIB([nome do modelo cvrp]) # exemplo "A-n46-k7" 
+    ```
+
+- Execute
+    ```julia
+    brkga_route(cvrp);
+    brkga_no_route(cvrp); # another implementation that doest encode route
     ```

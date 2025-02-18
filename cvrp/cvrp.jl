@@ -7,9 +7,8 @@
 ###################################################
 
 using CVRPLIB
-using Dates
-
 include("cvrpplot.jl")
+using Dates
 
 # Solution cost without route codification
 function cvrpdist_no_route!(cvrp, encoded_solution)
@@ -184,8 +183,8 @@ end
 
 # Each element of endoded_solution is composed of a integer for a vehicle plus a
 # random number in [0, 1[
-# Surpassing the cvrp.capacity of a vehicle, a greedy approach is used to find the
-# closest vehicle with space and the encoded_solution is reforged
+# A localsearch approach is used to find the order and route of each client that
+# minimize the added cost and doesnt excess the capacity of each vehicle.
 function decode_solution_no_route!(encoded_solution, cvrp)
     solution = [[1, 1]]
     vehicle_loads = [0]
