@@ -157,14 +157,11 @@ function decode_solution!(encoded_solution, cvrp, min_vehicles)
             insert!(solution[best_vehicle], best_position, client)
             vehicle_loads[best_vehicle] += cvrp.demand[client]
         else
-            println("Client $client demanded a new vehicle")
+            # println("Client $client demanded a new vehicle")
             push!(solution, [1, client, 1])
             push!(vehicle_loads, cvrp.demand[client])
             num_vehicles += 1
             min_vehicles[] += 1
-            # println("Client $client could not be inserted")
-            # println("Client $client demand: ", cvrp.demand[client])
-            # println("Vehicle loads: ", vehicle_loads)
         end
     end
     

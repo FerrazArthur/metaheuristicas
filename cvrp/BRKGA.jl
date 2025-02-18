@@ -55,6 +55,7 @@ end
         do pacote cvrplib;
         N -> Número de indivíduos na população;
         K -> Quantidade de iterações máxima;
+        time_s -> Tempo máximo de execução em segundos;
         limite -> Quantidade máxima de interações subsequentes sem atualização
             do melhor global;
 """
@@ -160,6 +161,7 @@ end
         do pacote cvrplib;
         N -> Número de indivíduos na população;
         K -> Quantidade de iterações máxima;
+        time_s -> Tempo máximo de execução em segundos;
         limite -> Quantidade máxima de interações subsequentes sem atualização
             do melhor global;
 """
