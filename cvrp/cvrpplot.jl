@@ -9,10 +9,9 @@
 using Plots
 using Random
 
-function cvrpplot(cvrp, min_vehicles, solution, title="")
+function cvrpplot(cvrp, solution, title="")
     # Número de cidades (excluindo o depósito)
-    n = cvrp.dimension - 1
-    solution = decode_solution!(solution, cvrp, min_vehicles)
+    n = cvrp.dimension
     # Coordenadas mínimas e máximas
     xmin = minimum(cvrp.coordinates[:,1])
     xmax = maximum(cvrp.coordinates[:,1])
@@ -30,7 +29,7 @@ function cvrpplot(cvrp, min_vehicles, solution, title="")
                leg = false)
     
     # Plota as cidades (clientes)
-    for i = 2:(n + 1)
+    for i = 2:n
         fig = scatter!([cvrp.coordinates[i,1]], [cvrp.coordinates[i,2]], color = "red", mark = :o, markersize = 2)
     end
     
