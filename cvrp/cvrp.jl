@@ -29,7 +29,7 @@ end
 
 # Solution cost
 function cvrpdist!(cvrp, encoded_solution, num_vehicles)
-    solution = decode_solution!(encoded_solution, cvrp, num_vehicles)
+    solution = decode_solution!(deepcopy(encoded_solution), cvrp, num_vehicles)
     total_dist = 0
     
     for route in solution
