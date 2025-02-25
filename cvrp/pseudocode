@@ -1,0 +1,60 @@
+Algoritmo BRKGA para Resolução do CVRP
+
+Entrada:
+    - Instância do problema CVRP
+    - Hyper parâmetros: tamanho da população, taxa de elitismo, mutação, e cruzamento
+    - Critérios de parada: tempo máximo ou número de iterações sem melhoria
+
+Inicialização:
+    - Gerar uma população inicial de soluções aleatórias codificadas
+    - Avaliar o custo de cada solução e ordenar a população
+
+Enquanto critério de parada não for atingido:
+    - Selecionar indivíduos elite e preservar para a proxima população
+    - Gerar novos indivíduos por cruzamento, garantindo que um dos genitores sempre seja um elite
+    - Aplicar mutação em parte da população ao substitui-los por soluções aleatórias
+    - Avaliar a nova população e ordenar
+    - Atualizar melhor solução global
+
+Saída:
+    - Melhor solução encontrada e seu custo
+
+---------------------------------------
+
+Decodificação de um cromossomo:
+Entrada: Cromossomo codificado em valores contínuos
+Processo:
+    - Ordenar os clientes com base na ordem de decodificação
+    - Atribuir clientes aos veículos indicados no cromossomo, respeitando restrições de capacidade.
+        - Não sendo possível, separa esse cliente para realocação
+    - Refinar as rotas com heurística 2-opt
+    - Busca local limitada para Inserir clientes não alocados nas melhores posições possíveis
+Saída: Conjunto de rotas viáveis para os veículos
+
+---------------------------------------
+
+Heurística 2-opt:
+Entrada: Uma rota
+Processo:
+    - Para cada par de arestas na rota:
+        - Testar a inversão do segmento intermediário
+        - Manter a modificação se reduzir a distância
+Saída: Rota otimizada
+
+---------------------------------------
+
+Cruzamento:
+Entrada: Dois cromossomos genitores: um elite e um qualquer
+Processo:
+    - Para cada gene:
+        - Escolher valor de um dos pais com probabilidade maior pro genitor elite
+Saída: Novo cromossomo filho
+
+---------------------------------------
+
+Seleção:
+Entrada: População e custos das soluções
+Processo:
+    - Selecionar um indivíduo do grupo elite
+    - Selecionar um indíviduo qualquer
+Saída: Dois indivíduos para cruzamento

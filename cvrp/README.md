@@ -5,7 +5,10 @@ Repositório com metaheuristicas escritas em Julia para disciplina optativa
 
 - Instale o cliente Julia
 
-- Execute o Julia  
+- Execute o Julia com
+    ```bash
+    LD_LIBRARY_PATH="" julia
+    ```
 - Instale o pacote CVRPLIB para Julia  
     - in julia terminal, type:
     ```bash

@@ -61,6 +61,31 @@ file_lock = ReentrantLock()
 
 tasks = []
 
+function run_parallel_experiments(instancia, elitism_p, Mutation_ratio, Crossover_bias)
+    println("Executando: elitism: $elitism_p | mutation_ratio: $Mutation_ratio | crossover_bias: $Crossover_bias")
+
+    results = Vector{Float64}(undef, 10)
+
+    Threads.@threads for i in 1:10
+        try
+            cvrp, _, _ = readCVRPLIB(instancia)
+            results[i] = brkga_route(cvrp, elitism_ratio=elitism_p, mutation_ratio=Mutation_ratio, crossover_bias=Crossover_bias)
+        catch e
+            results[i] = Inf
+        end
+    end
+
+
+    # Compute statistics
+    melhor = minimum(results)
+    media = mean(results)
+    desvio = std(results)
+
+    return melhor, media, desvio
+end
+
+
+
 # Executar experimentos para todas as combinações
 open(partial_results_file, "a") do file
     for instancia in instancias
@@ -73,44 +98,21 @@ open(partial_results_file, "a") do file
                         println("Configuração já processada: ($instancia, $elitism_p, $Mutation_ratio, $Crossover_bias) - Pulando...")
                         continue
                     end
-                     # Criamos uma tarefa assíncrona para cada configuração
-                     push!(tasks, @spawn begin
-                        println("Executando: elitism: $elitism_p | mutation_ratio: $Mutation_ratio | crossover_bias: $Crossover_bias")
 
-                        # Criar vetor local para os 10 testes
-                        melhores_resultados = Vector{Float64}(undef, 10)
+                    # Run parallel experiments
+                    melhor, media, desvio = run_parallel_experiments(instancia, elitism_p, Mutation_ratio, Crossover_bias)
 
-                        # Rodar 10 avaliações em paralelo usando `@spawn`
-                        sub_tasks = [Threads.@spawn brkga_route(first(readCVRPLIB(instancia)), elitism_ratio=elitism_p, mutation_ratio=Mutation_ratio, crossover_bias=Crossover_bias) for _ in 1:10]
+                    lock(file_lock) do
+                        push!(resultados, (instancia, elitism_p, Mutation_ratio, Crossover_bias, melhor, media, desvio))
+                        
+                        # Escrever no arquivo de texto
+                        println(file, "Instância: $instancia | elitism: $elitism_p | mutation_ratio: $Mutation_ratio | crossover_bias: $Crossover_bias -> Melhor Custo: $melhor | Média: $media | Desvio Padrão: $desvio")
+                    end
 
-                        # Coletar os resultados das threads
-                        for (i, task) in enumerate(sub_tasks)
-                            melhores_resultados[i] = fetch(task)  # Pega o resultado da thread
-                        end
-
-                        melhor = minimum(melhores_resultados)
-                        media = mean(melhores_resultados)
-                        desvio = std(melhores_resultados)
-
-                        lock(file_lock) do
-                            push!(resultados, (instancia, elitism_p, Mutation_ratio, Crossover_bias, melhor, media, desvio))
-                            
-                            # Escrever no arquivo de texto
-                            println(file, "Instância: $instancia | elitism: $elitism_p | mutation_ratio: $Mutation_ratio | crossover_bias: $Crossover_bias -> Melhor Custo: $melhor | Média: $media | Desvio Padrão: $desvio")
-                        end
-
-                        println("Instância: $instancia | elitism: $elitism_p | mutation_ratio: $Mutation_ratio | crossover_bias: $Crossover_bias -> Melhor Custo: $melhor | Média: $media | Desvio Padrão: $desvio")
-                    end)
+                    println("Instância: $instancia | elitism: $elitism_p | mutation_ratio: $Mutation_ratio | crossover_bias: $Crossover_bias -> Melhor Custo: $melhor | Média: $media | Desvio Padrão: $desvio")
                 end
             end
         end
     end
-
-    # Aguarda todas as tarefas finalizarem antes de salvar os resultados
-    println("Aguardando todas as tarefas terminarem...")
-    try
-        foreach(fetch, tasks)
-    catch e
-        println("Erro detectado em uma thread: ", e)
-    end
 end
+CSV.write("resultados.csv", resultados)

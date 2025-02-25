@@ -1,4 +1,13 @@
+import Pkg
+Pkg.add("Random")
+Pkg.add("Plots")
+Pkg.add("Dates")
+Pkg.add("CVRPLIB")
+
+Pkg.build()
+
 include("cvrp.jl")
+
 
 """
     Input: genitores 1 e 2
@@ -136,8 +145,8 @@ function brkga_route(cvrp::CVRP; N=1000, K=1000, time_s=300, limite=200,
             contad = limite
         end
 
-        # decoded_melhor = decode_solution!(deepcopy(melhor), cvrp, num_vehicles)
-        # cvrpplot(cvrp, decoded_melhor, "Indivíduo com menor trajetoria:")
+        decoded_melhor = decode_solution!(deepcopy(melhor), cvrp, num_vehicles)
+        cvrpplot(cvrp, decoded_melhor, "Indivíduo com menor trajetoria:")
         # sleep(0.08)
         # println("Menor trajeto até então: ", melhorDist, " metros")
 
