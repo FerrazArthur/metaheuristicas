@@ -68,8 +68,8 @@ end
         limite -> Quantidade máxima de interações subsequentes sem atualização
             do melhor global;
 """
-function brkga_route(cvrp::CVRP; N=1000, K=1000, time_s=300, limite=200,
-                    elitism_ratio=0.2, mutation_ratio=0.1449275, crossover_bias=0.7)
+function brkga_route(cvrp::CVRP; N=1000, K=50000, time_s=300, limite=200,
+                    elitism_ratio=0.2, mutation_ratio=0.1449275, crossover_bias=0.7, optimum=-1)
     contad = limite
     elite_tax = Int(floor(elitism_ratio * N))
     mutation_tax = Int(floor(mutation_ratio * (N - elite_tax)))
@@ -109,6 +109,7 @@ function brkga_route(cvrp::CVRP; N=1000, K=1000, time_s=300, limite=200,
 
     melhor = deepcopy(populacao[1, :])
     melhorDist = custos[1]
+    melhorTempo = 0
 
     startTime = Dates.datetime2epochms(now())
 
@@ -143,12 +144,13 @@ function brkga_route(cvrp::CVRP; N=1000, K=1000, time_s=300, limite=200,
             melhorDist = custos[1]
             melhor = deepcopy(populacao[1, :])
             contad = limite
+            melhorTempo = Dates.datetime2epochms(now()) - startTime
         end
 
         decoded_melhor = decode_solution!(deepcopy(melhor), cvrp, num_vehicles)
         cvrpplot(cvrp, decoded_melhor, "Indivíduo com menor trajetoria:")
         # sleep(0.08)
-        # println("Menor trajeto até então: ", melhorDist, " metros")
+        println("Menor trajeto até então: ", melhorDist, " metros")
 
         if contad == 0
             println("Alcançado limite de ", limite, " iterações sem melhora")
@@ -159,11 +161,15 @@ function brkga_route(cvrp::CVRP; N=1000, K=1000, time_s=300, limite=200,
             println("Alcançado tempo limite de ", time_s, " segundos")
             break
         end
+        if optimum != -1 && melhorDist == optimum
+            println("Alcançado valor ótimo de ", optimum, " metros em ", k, " iterações e ", melhorTempo, " milissegundos")
+            break
+        end
     end
     
     # println("Menor custo encontrado é ", melhorDist - cvrp.optimal, " metros menor que o custo ótimo do problema. (", round((melhorDist - cvrp.optimal) * 100.0 / cvrp.optimal; digits=3), "% de erro)")
     # return melhor
-    return melhorDist
+    return melhorDist, melhorTempo
 end
 
 
